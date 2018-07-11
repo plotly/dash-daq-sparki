@@ -1,4 +1,3 @@
-import serial
 import time
 import numpy as np
 import pandas as pd
@@ -6,10 +5,10 @@ import dash
 import dash_core_components as dcc
 import dash_html_components as html
 import dash_daq as daq
-from dash_daq import DarkThemeProvider as DarkThemeProvider
-from dash.dependencies import State, Input, Output, Event
+from dash.dependencies import State, Input, Output
 import plotly.graph_objs as go
-import json
+import random
+
 app = dash.Dash(__name__)
 
 server = app.server
@@ -17,18 +16,8 @@ app.scripts.config.serve_locally = True
 app.config['suppress_callback_exceptions'] = True
 
 
-arr = np.array([[0,0,0],[0,0,0],[0,1,0]])
-
-def setArr(array):
-    arr = array
-    return
-
 def rgb_convert_hex(r, g, b):
     return '#%02x%02x%02x' % (r, g, b)
-
-# Set COM Port Here:
-ser = serial.Serial("COM8", 9600, timeout=13)
-ser.flush()
 
 # CSS Imports
 external_css = ["https://codepen.io/chriddyp/pen/bWLwgP.css",
@@ -41,28 +30,6 @@ external_css = ["https://codepen.io/chriddyp/pen/bWLwgP.css",
 for css in external_css:
     app.css.append_css({"external_url": css})
 
-# root_layout = html.Div(
-#     [
-#         dcc.Location(id='url', refresh=False),
-#         html.Div(
-#             [
-#                 daq.ToggleSwitch(
-#                     id='toggleTheme',
-#                     style={
-#                         'position': 'absolute',
-#                         'transform': 'translate(-50%, 20%)'
-#                     },
-#                     size=25
-#                 ),
-#             ], id="toggleDiv",
-#             style={
-#                 'width': 'fit-content',
-#                 'margin': '0 auto'
-#             }
-#         ),
-#         html.Div(id='page-content'),
-#     ]
-# )
 
 app.layout = html.Div(
     [
@@ -784,62 +751,48 @@ def case_master(color_case, grip_case, beep_case, motor_case, ultra_case):
     recent_case = max(master_case, key=master_case.get)
     return recent_case
 # Sweep Ultra
-@app.callback(
-    Output("sweep-hold", "children"),
-    [Input("ultrasonic-sweep", "n_clicks")]
-)
-def ultrasonic_sweep(sweep):
-        if sweep > 1:
-            response = ser.readlines(200)
-            response_string = ",".join(map(str, response))
-            response_string = response_string.replace("b'", "")
-            response_string = response_string.replace("\\r\\n,", "")
-            response_string_angle = response_string.split("c")
-            response_string_distance = response_string.split("a")
-            response_string_angle.sort()
-            response_string_distance.sort()
-            response_string_angle = response_string_angle[1:19]
-            response_string_distance = response_string_distance [1:19]
+# @app.callback(
+#     Output("sweep-hold", "children"),
+#     [Input("ultrasonic-sweep", "n_clicks")]
+# )
+# def ultrasonic_sweep(sweep):
+#             response_string_angle = response_string_angle[1:19]
+#             response_string_distance = response_string_distance [1:19]
 
 
-            df = pd.DataFrame()
-            df['Angles'] = response_string_angle
-            df['Distance'] = response_string_distance
+#             df = pd.DataFrame()
+#             df['Angles'] = response_string_angle
+#             df['Distance'] = response_string_distance
             
             
-            return df.to_json(date_format='iso', orient='split')
-        return
+#             return df.to_json(date_format='iso', orient='split')
+#         return
             
 # Sweep Graph
-@app.callback(
-    Output("sweep-graph", "figure"),
-    [Input("sweep-hold", "children")]
-)
-def ultrasonic_sweep(jsonified_cleaned_data):
-    
-    dff = pd.read_json(jsonified_cleaned_data, orient='split')
-    print(dff)
-    print(dff["Angles"])
-    print(dff["Distance"])
+# @app.callback(
+#     Output("sweep-graph", "figure"),
+#     [Input("sweep-hold", "children")]
+# )
+# def ultrasonic_sweep(jsonified_cleaned_data):
    
-    return {
-        'data': [
-            go.Scatter(
-                x=dff["Angles"],
-                y=dff["Distance"],
-                mode='markers',
-                marker={'size': 6}
-            )
-        ],
-        'layout': go.Layout(
-            xaxis={
-                'title': 'Angle (Degrees)'},
-            yaxis={
-                'title': 'Distance (CM)'},
-            margin={
-                'l': 50, 'b': 35, 't': 0, 'r': 20},
-        )
-    }
+#     return {
+#         'data': [
+#             go.Scatter(
+#                 x=dff["Angles"],
+#                 y=dff["Distance"],
+#                 mode='markers',
+#                 marker={'size': 6}
+#             )
+#         ],
+#         'layout': go.Layout(
+#             xaxis={
+#                 'title': 'Angle (Degrees)'},
+#             yaxis={
+#                 'title': 'Distance (CM)'},
+#             margin={
+#                 'l': 50, 'b': 35, 't': 0, 'r': 20},
+#         )
+#     }
 
 
 # Capture Ultra
@@ -850,9 +803,7 @@ def ultrasonic_sweep(jsonified_cleaned_data):
 def ultrasonic_response(clicks):
     response = ""
     if clicks > 1:
-        ser.reset_input_buffer()
-        response = ser.readline().decode("ASCII")
-        response = response.split("\r\n")[0]
+        response = random.uniform(0, 150)
         return response
 
 # Ultrasonic Response
@@ -874,7 +825,7 @@ def ultrasonic_display(response):
     response = str(response)
     return response
 
-# # Ultrasonic Response
+# Ultrasonic Response
 @app.callback(
     Output("ultrasonic-light", "color"),
     [Input("capture-hold", "children")]
@@ -931,8 +882,6 @@ def central_command(command, case_master, head, beep_freq, RGB_color, ultra, box
     command = "<{},{},{},{},{},{},{},{},{}>".format(
         command, case_master, beep_freq, R, G, B, box, ultra, head)
     send = command.encode("ASCII")
-    ser.flush()
-    ser.write(send)
     readme = ("------------------------READ ME!----------------------\n" +
              "This app was made to control Sparki, an arduino powered." +
              "robot. Sparki is controlled wirelessly via the bluetooth" +
@@ -950,7 +899,6 @@ def central_command(command, case_master, head, beep_freq, RGB_color, ultra, box
              "and the GUI. The sweep mode, sweeps a 180 degree area in 10 degree " +
              "increments, and graphs the distance at each angle. Capture mode," +
              " records a single data point and displays the distance of that object.")
-    
     return readme + command_string + modes
 
 
@@ -969,8 +917,6 @@ def central_command(RGB_color, move, style, box):
         hex_color = rgb_convert_hex(r, g, b)
         style["color"] = hex_color
         return style
-    global arr
-    print(arr)
 
     x = style["paddingLeft"][:4]
     x = x.split('p')[0]
@@ -979,45 +925,20 @@ def central_command(RGB_color, move, style, box):
     y = style["paddingTop"][:4]
     y = y.split('p')[0]
     y = int(y)
-
-
-    if move == "LEFT" and box == "1":
-        arr = np.rot90(arr, 1, (0, 1))
-    elif move == "RIGHT" and box == "1":
-        arr = np.rot90(arr, 1, (1, 0))
     
-    setArr(arr)
-    indicex = (np.nonzero(arr)[0][0])
-    indicey = (np.nonzero(arr)[1][0])
+    if move == "UP" and y > 0:
+        y = y - 50
+        style["paddingTop"] = "{}px".format(y) 
+    elif move == "DOWN" and y < 260:
+        y = y + 50
+        style["paddingTop"] = "{}px".format(y) 
+    elif move == "LEFT" and x > 0:
+        x = x - 50
+        style["paddingLeft"] = "{}px".format(x) 
+    elif move == "RIGHT" and x < 280:
+        x = x + 50
+        style["paddingLeft"] = "{}px".format(x) 
     
-    print(arr)
-    
-    if move == "UP" and box == "1": 
-        if (indicex == 0 and indicey == 1):
-            y -= 50
-            style["paddingTop"] = "{}px".format(y)
-        elif (indicex == 1 and indicey == 2 and x < 280):
-            x += 50
-            style["paddingLeft"] = "{}px".format(x)
-        elif (indicex == 2 and indicey == 1 and y < 260):
-            y += 50
-            style["paddingTop"] = "{}px".format(y)
-        elif (indicex == 1 and indicey == 0):
-            x -=  50
-            style["paddingLeft"] = "{}px".format(x)
-    elif move == "DOWN" and box == "1":
-        if (indicex == 0 and indicey == 1 and y < 260):
-            y += 50
-            style["paddingTop"] = "{}px".format(y)
-        elif (indicex == 1 and indicey == 2):
-            x -= 50
-            style["paddingLeft"] = "{}px".format(x)
-        elif (indicex == 2 and indicey == 1):
-            y -= 50
-            style["paddingTop"] = "{}px".format(y)
-        elif (indicex == 1 and indicey == 0 and x < 280):
-            x += 50
-            style["paddingLeft"] = "{}px".format(x)
     return style
 
 # Sparki Arrow Colors
