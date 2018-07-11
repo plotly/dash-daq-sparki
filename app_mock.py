@@ -41,29 +41,6 @@ external_css = ["https://codepen.io/chriddyp/pen/bWLwgP.css",
 for css in external_css:
     app.css.append_css({"external_url": css})
 
-# root_layout = html.Div(
-#     [
-#         dcc.Location(id='url', refresh=False),
-#         html.Div(
-#             [
-#                 daq.ToggleSwitch(
-#                     id='toggleTheme',
-#                     style={
-#                         'position': 'absolute',
-#                         'transform': 'translate(-50%, 20%)'
-#                     },
-#                     size=25
-#                 ),
-#             ], id="toggleDiv",
-#             style={
-#                 'width': 'fit-content',
-#                 'margin': '0 auto'
-#             }
-#         ),
-#         html.Div(id='page-content'),
-#     ]
-# )
-
 app.layout = html.Div(
     [
         html.Div(
