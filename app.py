@@ -1,4 +1,3 @@
-import serial
 import time
 import numpy as np
 import pandas as pd
@@ -6,10 +5,10 @@ import dash
 import dash_core_components as dcc
 import dash_html_components as html
 import dash_daq as daq
-from dash_daq import DarkThemeProvider as DarkThemeProvider
-from dash.dependencies import State, Input, Output, Event
+from dash.dependencies import State, Input, Output
 import plotly.graph_objs as go
-import json
+import random
+
 app = dash.Dash(__name__)
 
 server = app.server
@@ -17,18 +16,8 @@ app.scripts.config.serve_locally = True
 app.config['suppress_callback_exceptions'] = True
 
 
-arr = np.array([[0,0,0],[0,0,0],[0,1,0]])
-
-def setArr(array):
-    arr = array
-    return
-
 def rgb_convert_hex(r, g, b):
     return '#%02x%02x%02x' % (r, g, b)
-
-# Set COM Port Here:
-ser = serial.Serial("COM8", 9600, timeout=13)
-ser.flush()
 
 # CSS Imports
 external_css = ["https://codepen.io/chriddyp/pen/bWLwgP.css",
@@ -41,28 +30,6 @@ external_css = ["https://codepen.io/chriddyp/pen/bWLwgP.css",
 for css in external_css:
     app.css.append_css({"external_url": css})
 
-# root_layout = html.Div(
-#     [
-#         dcc.Location(id='url', refresh=False),
-#         html.Div(
-#             [
-#                 daq.ToggleSwitch(
-#                     id='toggleTheme',
-#                     style={
-#                         'position': 'absolute',
-#                         'transform': 'translate(-50%, 20%)'
-#                     },
-#                     size=25
-#                 ),
-#             ], id="toggleDiv",
-#             style={
-#                 'width': 'fit-content',
-#                 'margin': '0 auto'
-#             }
-#         ),
-#         html.Div(id='page-content'),
-#     ]
-# )
 
 app.layout = html.Div(
     [
@@ -187,8 +154,8 @@ app.layout = html.Div(
                                         daq.Knob(
                                             id="ultrasonic-angle",
                                             label=" ",
+                                            value=0,
                                             size=60,
-                                            value=23,
                                             color="#FF5E5E",
                                             min=0,
                                             max=180,
@@ -668,6 +635,15 @@ def grip_close(grip):
 def grip_close(grip):
     return time.time()
 
+@app.callback(
+    Output("stop-move", "children"),
+    [Input("joystick", "force")],
+    [State("joystick", "angle")]
+)
+def move_right(move, angle):
+    if move == 0:
+        return time.time()
+    return 0.0
 
 @app.callback(
     Output("up-move", "children"),
@@ -703,15 +679,6 @@ def move_left(move):
 def move_right(move):
     if move < 45 or move > 345:
             return time.time()
-    return 0.0
-
-@app.callback(
-    Output("stop-move", "children"),
-    [Input("joystick", "force")]
-)
-def move_right(move):
-    if move == 0:
-        return time.time()
     return 0.0
 
 # Case Select
@@ -783,32 +750,16 @@ def case_master(color_case, grip_case, beep_case, motor_case, ultra_case):
                    "5":ultra_case}
     recent_case = max(master_case, key=master_case.get)
     return recent_case
+
 # Sweep Ultra
 @app.callback(
     Output("sweep-hold", "children"),
     [Input("ultrasonic-sweep", "n_clicks")]
 )
-def ultrasonic_sweep(sweep):
-        if sweep > 1:
-            response = ser.readlines(200)
-            response_string = ",".join(map(str, response))
-            response_string = response_string.replace("b'", "")
-            response_string = response_string.replace("\\r\\n,", "")
-            response_string_angle = response_string.split("c")
-            response_string_distance = response_string.split("a")
-            response_string_angle.sort()
-            response_string_distance.sort()
-            response_string_angle = response_string_angle[1:19]
-            response_string_distance = response_string_distance [1:19]
-
-
-            df = pd.DataFrame()
-            df['Angles'] = response_string_angle
-            df['Distance'] = response_string_distance
-            
-            
-            return df.to_json(date_format='iso', orient='split')
-        return
+def ultrasonic_sweep(sweep):    
+    df = pd.DataFrame(np.random.randint(-1,150,size=(20, 1)), columns=list('A'))
+    return df.to_json(date_format='iso', orient='split')
+        
             
 # Sweep Graph
 @app.callback(
@@ -816,17 +767,12 @@ def ultrasonic_sweep(sweep):
     [Input("sweep-hold", "children")]
 )
 def ultrasonic_sweep(jsonified_cleaned_data):
-    
     dff = pd.read_json(jsonified_cleaned_data, orient='split')
-    print(dff)
-    print(dff["Angles"])
-    print(dff["Distance"])
-   
     return {
         'data': [
             go.Scatter(
-                x=dff["Angles"],
-                y=dff["Distance"],
+                x= [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180],
+                y=dff["A"],
                 mode='markers',
                 marker={'size': 6}
             )
@@ -848,12 +794,9 @@ def ultrasonic_sweep(jsonified_cleaned_data):
     [Input("ultrasonic-capture", "n_clicks")]
 )
 def ultrasonic_response(clicks):
-    response = ""
-    if clicks > 1:
-        ser.reset_input_buffer()
-        response = ser.readline().decode("ASCII")
-        response = response.split("\r\n")[0]
-        return response
+    response = random.uniform(-1, 150)
+    response = int(response)
+    return response
 
 # Ultrasonic Response
 @app.callback(
@@ -861,20 +804,17 @@ def ultrasonic_response(clicks):
     [Input("capture-hold", "children")]
 )
 def ultrasonic_display(response):
-    if response == "-1":
+    if response == -1:
         return "999"
-    elif int(response) >= 100:
-        return int(response)
+    elif response >= 100:
+        return response
     response = float(response)
-    print(response)
     response = "%.2f" % response
-    print(response)
     response = (f"{response:{4}.{4}}")
-    print(response)
     response = str(response)
     return response
 
-# # Ultrasonic Response
+# Ultrasonic Response
 @app.callback(
     Output("ultrasonic-light", "color"),
     [Input("capture-hold", "children")]
@@ -905,7 +845,6 @@ def command_string(move_up, move_left, move_down, move_right, move_stop, grip_op
     master_command = {"UP": move_up, "LEFT": move_left, "RIGHT": move_right, "DOWN": move_down, "STOPM": move_stop,
                       "OPEN": grip_open, "CLOSE": grip_close, "STOP": grip_stop, "BEEP": beep_hold, "LED": color_hold, "ULTRA": ultra_hold, "ULTRAF": ultra_ind }
     recent_command = max(master_command, key=master_command.get)
-    print(recent_command)
     return recent_command
 
 
@@ -921,7 +860,6 @@ def command_string(move_up, move_left, move_down, move_right, move_stop, grip_op
      State("free-box-hold", "children")]
 )
 def central_command(command, case_master, head, beep_freq, RGB_color, ultra, box):
-    print(RGB_color)
     R = RGB_color['rgb']['r']
     G = RGB_color['rgb']['g']
     B = RGB_color['rgb']['b']
@@ -931,26 +869,24 @@ def central_command(command, case_master, head, beep_freq, RGB_color, ultra, box
     command = "<{},{},{},{},{},{},{},{},{}>".format(
         command, case_master, beep_freq, R, G, B, box, ultra, head)
     send = command.encode("ASCII")
-    ser.flush()
-    ser.write(send)
     readme = ("------------------------READ ME!----------------------\n" +
              "This app was made to control Sparki, an arduino powered." +
              "robot. Sparki is controlled wirelessly via the bluetooth" +
-             " HC-05 module and a laptop. With this app you can control" +
-             " Sparki's: head, movement, piezometer, ultrasonic sensor, and RGB LED.\n" +
-             "-------------------COMMAND STRING----------------\n\n")
+             " HC-05 module and a laptop. With this app you can control " +
+             "Sparki's: head, movement, RGB LED, piezometer, and ultrasonic sensor. This is a mock\n" +
+             " app, which show cases what the real local app would do.\n"
+             "\n-------------------COMMAND STRING----------------\n\n")
     command_string = ("Command: " + command)     
     modes =  ("\n\n------------------------MODES!!!----------------------\n"
              "The motion of Sparki has two modes, where free mode allow" +
-             "s sparki to move anywhere. Box mode is designed to show" +
+             "s sparki to move anywhere. Box mode is designed to show " +
              "Sparkis movements, if a tracking system were installed." + 
              "In box mode, Sparki is coded, to move in 90 degree incre" +
-             "ments and 5 cm forwards and backwards. By setting up a" +  
-             "__ by __ box you can see the correlation bewteen your Sparkis movements " +
-             "and the GUI. The sweep mode, sweeps a 180 degree area in 10 degree " +
+             "ments and 5 cm forwards and backwards. By setting up a " +  
+             "__ by __ box you can see the correlation bewteen your GUI and Sparkis " +
+             "movements. The sweep mode, sweeps a 180 degree area in 10 degree " +
              "increments, and graphs the distance at each angle. Capture mode," +
              " records a single data point and displays the distance of that object.")
-    
     return readme + command_string + modes
 
 
@@ -969,8 +905,6 @@ def central_command(RGB_color, move, style, box):
         hex_color = rgb_convert_hex(r, g, b)
         style["color"] = hex_color
         return style
-    global arr
-    print(arr)
 
     x = style["paddingLeft"][:4]
     x = x.split('p')[0]
@@ -979,45 +913,20 @@ def central_command(RGB_color, move, style, box):
     y = style["paddingTop"][:4]
     y = y.split('p')[0]
     y = int(y)
-
-
-    if move == "LEFT" and box == "1":
-        arr = np.rot90(arr, 1, (0, 1))
-    elif move == "RIGHT" and box == "1":
-        arr = np.rot90(arr, 1, (1, 0))
+    if box == "1":
+        if move == "UP" and y > 0:
+            y = y - 50
+            style["paddingTop"] = "{}px".format(y) 
+        elif move == "DOWN" and y < 260:
+            y = y + 50
+            style["paddingTop"] = "{}px".format(y) 
+        elif move == "LEFT" and x > 0:
+            x = x - 50
+            style["paddingLeft"] = "{}px".format(x) 
+        elif move == "RIGHT" and x < 280:
+            x = x + 50
+            style["paddingLeft"] = "{}px".format(x) 
     
-    setArr(arr)
-    indicex = (np.nonzero(arr)[0][0])
-    indicey = (np.nonzero(arr)[1][0])
-    
-    print(arr)
-    
-    if move == "UP" and box == "1": 
-        if (indicex == 0 and indicey == 1):
-            y -= 50
-            style["paddingTop"] = "{}px".format(y)
-        elif (indicex == 1 and indicey == 2 and x < 280):
-            x += 50
-            style["paddingLeft"] = "{}px".format(x)
-        elif (indicex == 2 and indicey == 1 and y < 260):
-            y += 50
-            style["paddingTop"] = "{}px".format(y)
-        elif (indicex == 1 and indicey == 0):
-            x -=  50
-            style["paddingLeft"] = "{}px".format(x)
-    elif move == "DOWN" and box == "1":
-        if (indicex == 0 and indicey == 1 and y < 260):
-            y += 50
-            style["paddingTop"] = "{}px".format(y)
-        elif (indicex == 1 and indicey == 2):
-            x -= 50
-            style["paddingLeft"] = "{}px".format(x)
-        elif (indicex == 2 and indicey == 1):
-            y -= 50
-            style["paddingTop"] = "{}px".format(y)
-        elif (indicex == 1 and indicey == 0 and x < 280):
-            x += 50
-            style["paddingLeft"] = "{}px".format(x)
     return style
 
 # Sparki Arrow Colors
@@ -1075,4 +984,4 @@ def sparki_arrow_left(command, style, box):
     
 if __name__ == '__main__':
    
-    app.run_server(debug=False)
+    app.run_server(debug=True)
