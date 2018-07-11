@@ -331,6 +331,7 @@ app.layout = html.Div(
 #     hex_color = rgb_convert_hex(r, g, b)
 #     print(hex_color)
 #     return color[hex_color]
+
 # Command String
 @app.callback(
     Output("grip-start", "children"),
