@@ -308,31 +308,35 @@ app.layout = html.Div(
                                         html.Div(
                                         [
                                         html.H6(
-                                            "Sweep Data",
+                                            "Sweep Data (CM)",
                                             style={"textAlign":"center"}
                                             ),
-                                        dcc.Graph(
-                                        id="sweep-graph",
-                                        style={"height":"200px", "width":"300px"},
+                                            dcc.Graph(
+                                            id="sweep-graph",
+                                            style={
+                                                "width": "310px", "height": "210px"},
                                             config={
-                                            'displayModeBar': False
-                                        },
-                                        figure={
-                                            'data':[
-                                                go.Scatter(                      
-                                                 x = [""],
-                                                 y = [""],
-                                                 mode = 'markers',
-                                                 marker = {'size': 6}
+                                                'displayModeBar': False
+                                            },
+                                            figure={
+                                                'data': [
+                                                    go.Scatterpolar(
+                                                        theta=[""],
+                                                        r=[""],
+                                                        mode='markers',
+                                                        marker={
+                                                            'size': 6}
+                                                    )
+                                                ],
+                                                'layout': go.Layout(
+                                                    polar={
+                                                        "sector": [0, 180],
+                                                        "radialaxis":{"visible": False}
+                                                    },
+                                                    margin={'l': 40, 'b': 50,
+                                                            't': 40, 'r': 40},
                                                 )
-                                            ],
-                                            'layout':go.Layout(
-
-                                                 xaxis={'title': 'Angle (Degrees)'},
-                                                 yaxis={'title': 'Distance (CM)'},
-                                                 margin={'l': 50, 'b': 35, 't': 0, 'r': 20},
-                                            )
-                                        }
+                                            }
                                         )
                                         ]
                                     ),
@@ -341,7 +345,7 @@ app.layout = html.Div(
                                             buttonText="Sweep",
                                             n_clicks=0,
                                             size=55,
-                                            style={"position":"absolute", "top":"16px","left":"247px"}
+                                            style={"position":"absolute", "top":"16px","left":"265px"}
 
                                         )
                                     ], style={"display": "flex",
@@ -757,7 +761,7 @@ def case_master(color_case, grip_case, beep_case, motor_case, ultra_case):
     [Input("ultrasonic-sweep", "n_clicks")]
 )
 def ultrasonic_sweep(sweep):    
-    df = pd.DataFrame(np.random.randint(-1,150,size=(20, 1)), columns=list('A'))
+    df = pd.DataFrame(np.random.randint(-1,150,size=(20, 1)), columns=list('D'))
     return df.to_json(date_format='iso', orient='split')
         
             
@@ -770,23 +774,21 @@ def ultrasonic_sweep(jsonified_cleaned_data):
     dff = pd.read_json(jsonified_cleaned_data, orient='split')
     return {
         'data': [
-            go.Scatter(
-                x= [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180],
-                y=dff["A"],
+            go.Scatterpolar(
+                theta=[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180],
+                r=dff["D"],
                 mode='markers',
                 marker={'size': 6}
             )
         ],
         'layout': go.Layout(
-            xaxis={
-                'title': 'Angle (Degrees)'},
-            yaxis={
-                'title': 'Distance (CM)'},
-            margin={
-                'l': 50, 'b': 35, 't': 0, 'r': 20},
+            polar={
+                "sector": [0, 180],
+                "radialaxis": {"visible": False}
+            },
+            margin={'l': 40, 'b': 50, 't': 40, 'r': 40},
         )
-    }
-
+    } 
 
 # Capture Ultra
 @app.callback(
@@ -870,23 +872,24 @@ def central_command(command, case_master, head, beep_freq, RGB_color, ultra, box
         command, case_master, beep_freq, R, G, B, box, ultra, head)
     send = command.encode("ASCII")
     readme = ("------------------------READ ME!----------------------\n" +
-             "This app was made to control Sparki, an arduino powered." +
-             "robot. Sparki is controlled wirelessly via the bluetooth" +
-             " HC-05 module and a laptop. With this app you can control " +
-             "Sparki's: head, movement, RGB LED, piezometer, and ultrasonic sensor. This is a mock\n" +
-             " app, which show cases what the real local app would do.\n"
-             "\n-------------------COMMAND STRING----------------\n\n")
-    command_string = ("Command: " + command)     
-    modes =  ("\n\n------------------------MODES!!!----------------------\n"
+              "This app was made to control Sparki, an arduino powered." +
+              "robot. Sparki is controlled wirelessly via the bluetooth" +
+              " HC-05 module and a laptop. With this app you can control" +
+              " Sparki's: head, movement, piezometer, ultrasonic sensor, and RGB LED.\n\n" +
+              "-------------------COMMAND STRING----------------\n\n")
+    command_string = ("Command: " + command)
+    modes = ("\n\n------------------------MODES!!!----------------------\n"
              "The motion of Sparki has two modes, where free mode allow" +
              "s sparki to move anywhere. Box mode is designed to show " +
-             "Sparkis movements, if a tracking system were installed." + 
+             "Sparki's movements, if a tracking system were installed." +
              "In box mode, Sparki is coded, to move in 90 degree incre" +
-             "ments and 5 cm forwards and backwards. By setting up a " +  
-             "__ by __ box you can see the correlation bewteen your GUI and Sparkis " +
-             "movements. The sweep mode, sweeps a 180 degree area in 10 degree " +
+             "ments and 5 cm forwards and backwards. Box mode is intended" +
+             "for the mock application, and has been left for the user, " +
+             "to modify if they want Sparki to respond with the the GUI." +
+             "The sweep mode, sweeps a 180 degree area in 10 degree " +
              "increments, and graphs the distance at each angle. Capture mode," +
              " records a single data point and displays the distance of that object.")
+
     return readme + command_string + modes
 
 

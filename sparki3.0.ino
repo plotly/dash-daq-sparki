@@ -14,8 +14,10 @@ unsigned long timeLeft = 0;
 unsigned long timeRight = 0;
 unsigned long timeForward = 0;
 unsigned long timeBackward = 0;
-int period = 3000;
-int periodStop = 2800;
+//int period = 3000;
+//int periodStop = 2800;
+int period = 1000;
+int periodStop = 800;
 int ultraPeriod = 10000;
 boolean commandOnce;
 int fastPeriod = 500;
@@ -152,58 +154,41 @@ void updateMovement() {
 
 
     if (commandOnce == false) {
-      if (millis() > timeForward + period) {
-        timeForward = millis();
+
         sparki.moveForward(5);
-      }
-      else if (millis() < timeForward + period && millis() > timeForward + periodStop) {
         sparki.moveStop();
         commandOnce = true;
-      }
     }
   }
 
   else if (strcmp(messageFromPC, "DOWN") == 0) {
 
     if (commandOnce == false) {
-      if (millis() > timeBackward + period) {
-        timeBackward = millis();
+      
         sparki.moveBackward(5);
-      }
-      else if (millis() < timeBackward + period && millis() > timeBackward  + periodStop) {
         sparki.moveStop();
         commandOnce = true;
-      }
     }
   }
 
   else if (strcmp(messageFromPC, "LEFT") == 0) {
     if (commandOnce == false) {
-      if (millis() > timeLeft + period) {
-        timeLeft = millis();
+     
         sparki.moveLeft(90);
-        
-
-      }
-      else if (millis() < timeLeft + period && millis() > timeLeft + periodStop) {
         sparki.moveStop();
         commandOnce = true;
       }
     }
-  }
   else if (strcmp(messageFromPC, "RIGHT") == 0) {
     if (commandOnce == false) {
-      if (millis() > timeRight + period) {
-        timeRight = millis();
+
         sparki.moveRight(90);
-      }
-      else if (millis() < timeRight + period && millis() > timeRight + periodStop) {
         sparki.moveStop();
         commandOnce = true;
       }
     }
   }
-}
+
 
 void updateMovementFree() {
   if (strcmp(messageFromPC, "STOPM") == 0) {
@@ -291,8 +276,9 @@ void updateUltrasonic() {
 }
 
 void sweepUltrasonic() {
-if (millis() > timeUltra + ultraPeriod) {
-    timeUltra = millis();
+  commandOnce = true;
+
+if (commandOnce) {
 
   for (int i = 0; i <= 180; i += 10) {
     angleServo = map(i, 0, 180, -90, 90);
@@ -307,15 +293,20 @@ if (millis() > timeUltra + ultraPeriod) {
     Serial1.println("a");
     
   }
+  sparki.servo(0);
+  datacase = 1;
+  movecase = 1;
+  strcpy(messageFromPC, "STOPM");
   }
-
+  
   }
 void captureUltrasonic() {
-  
-  if (millis() > timeUltra + period) {
-    timeUltra = millis();
+  commandOnce = true;
+  if (commandOnce) {
     Serial1.println(sparki.ping());
-    
+    datacase = 1;
+    movecase = 1;
+    strcpy(messageFromPC, "STOPM");
   }
 }
 void edgeAvoidance() {
