@@ -14,8 +14,7 @@ unsigned long timeLeft = 0;
 unsigned long timeRight = 0;
 unsigned long timeForward = 0;
 unsigned long timeBackward = 0;
-//int period = 3000;
-//int periodStop = 2800;
+
 int period = 1000;
 int periodStop = 800;
 int ultraPeriod = 10000;
@@ -51,7 +50,6 @@ void loop()
 {
   getDataPC();
   selectData();
-  ultraSonic();
   edgeAvoidance();
 
 }
@@ -107,9 +105,6 @@ void parseData() {
   blue = atoi(strtokIndx);
 
   strtokIndx = strtok(NULL, ",");
-  movecase = atoi(strtokIndx);
-
-  strtokIndx = strtok(NULL, ",");
   ultracase = atoi(strtokIndx);
 
   strtokIndx = strtok(NULL, ",");
@@ -120,7 +115,7 @@ void parseData() {
 void selectData() {
   switch (datacase) {
     case 1:
-      updateMovementCase();
+      updateMovementFree();
       break;
 
     case 2:
@@ -138,56 +133,23 @@ void selectData() {
     case 5:
       updateUltrasonic();
       break;
-
+    
+    case 6:
+      updateHead();
+      break;
   }
 }
 
+void updateHead() {
 
-void updateMovement() {
-
-  if (strcmp(messageFromPC, "STOPM") == 0) {
-    sparki.moveStop();
-    commandOnce = false;
-
+  commandOnce = true;
+  if (commandOnce) {
+    sparki.servo(map(head, 0, 180, -90, 90));
+    datacase = 1;
+    strcpy(messageFromPC, "STOPM");
   }
-  else if (strcmp(messageFromPC, "UP") == 0) {
-
-
-    if (commandOnce == false) {
-
-        sparki.moveForward(5);
-        sparki.moveStop();
-        commandOnce = true;
-    }
   }
-
-  else if (strcmp(messageFromPC, "DOWN") == 0) {
-
-    if (commandOnce == false) {
-      
-        sparki.moveBackward(5);
-        sparki.moveStop();
-        commandOnce = true;
-    }
-  }
-
-  else if (strcmp(messageFromPC, "LEFT") == 0) {
-    if (commandOnce == false) {
-     
-        sparki.moveLeft(90);
-        sparki.moveStop();
-        commandOnce = true;
-      }
-    }
-  else if (strcmp(messageFromPC, "RIGHT") == 0) {
-    if (commandOnce == false) {
-
-        sparki.moveRight(90);
-        sparki.moveStop();
-        commandOnce = true;
-      }
-    }
-  }
+  
 
 
 void updateMovementFree() {
@@ -213,32 +175,23 @@ void updateMovementFree() {
       }
 }
 
-void updateMovementCase() {
-  switch (movecase) {
-    case 1:
-      updateMovement();
-      break;
-    case 2:
-      updateMovementFree();
-      break;
-}
-}
+
 void updateGripper() {
 
   if (strcmp(messageFromPC, "OPEN") == 0) {
     sparki.gripperOpen();
-    delay(50);
+    delay(10);
 
   }
 
   else if (strcmp(messageFromPC, "CLOSE") == 0) {
     sparki.gripperClose();
-    delay(50);
+    delay(10);
   }
 
   else if (strcmp(messageFromPC, "STOP") == 0) {
     sparki.gripperStop();
-    delay(50);
+    delay(10);
 
   }
 }
@@ -256,14 +209,7 @@ void updateBeep() {
     sparki.beep(barkfreq);
   }
 }
-void ultraSonic() {
-  if (millis() > timeNow + fastPeriod) {
-    timeNow = millis();
-  if (strcmp(messageFromPC, "ULTRAF") == 0){
-    sparki.servo(map(head, 0, 180, -90, 90));
-  }
-  }
-}
+
 void updateUltrasonic() {
   switch(ultracase){
     case 1:
@@ -295,7 +241,6 @@ if (commandOnce) {
   }
   sparki.servo(0);
   datacase = 1;
-  movecase = 1;
   strcpy(messageFromPC, "STOPM");
   }
   
@@ -305,7 +250,6 @@ void captureUltrasonic() {
   if (commandOnce) {
     Serial1.println(sparki.ping());
     datacase = 1;
-    movecase = 1;
     strcpy(messageFromPC, "STOPM");
   }
 }

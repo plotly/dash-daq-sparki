@@ -1,3 +1,4 @@
+import serial
 import time
 import numpy as np
 import pandas as pd
@@ -5,9 +6,10 @@ import dash
 import dash_core_components as dcc
 import dash_html_components as html
 import dash_daq as daq
-from dash.dependencies import State, Input, Output
+from dash_daq import DarkThemeProvider as DarkThemeProvider
+from dash.dependencies import State, Input, Output, Event
 import plotly.graph_objs as go
-import random
+import json
 
 app = dash.Dash(__name__)
 
@@ -19,6 +21,11 @@ app.config['suppress_callback_exceptions'] = True
 def rgb_convert_hex(r, g, b):
     return '#%02x%02x%02x' % (r, g, b)
 
+
+# Set COM Port Here:
+ser = serial.Serial("COM8", 9600, timeout=13)
+ser.flush()
+
 # CSS Imports
 external_css = ["https://codepen.io/chriddyp/pen/bWLwgP.css",
                 "https://cdn.rawgit.com/matthewchan15/dash-css-style-sheets/adf070fa/banner.css",
@@ -29,7 +36,6 @@ external_css = ["https://codepen.io/chriddyp/pen/bWLwgP.css",
 
 for css in external_css:
     app.css.append_css({"external_url": css})
-
 
 app.layout = html.Div(
     [
@@ -54,7 +60,8 @@ app.layout = html.Div(
         html.Div(
             [
                 html.Div(
-                    [html.Div(
+                    [
+                        html.Div(
                         [
                             html.H5("LED Color",
                                     id="led-title",
@@ -82,7 +89,7 @@ app.layout = html.Div(
                                             id="noise-title",
                                             style={"textAlign": "center",
                                                    "paddingTop": "5%",
-                                                   "paddingBottom":"3%"}
+                                                   "paddingBottom": "3%"}
                                             ),
                                     html.Div(
                                         [
@@ -121,52 +128,42 @@ app.layout = html.Div(
                         html.Div(
                             [
 
-                                         html.H5("Motion",
+                                html.H5("Motion",
                                         id="motion-title",
                                         style={"textAlign": "center",
                                                "paddingTop": "3%"}
                                         ),
-                                        daq.ToggleSwitch(
-                                            id="free-box",
-                                            label=["Box", "Free"],
-                                            color="#FF5E5E",
-                                            value=True,
-                                            size=32,
-                                            style={"marginBottom":"-1%", "display": "flex",
-                                                       "justify-content": "center",
-                                                       "align-items": "center"}
-                                        ),
-
                                 html.Div(
                                     [
                                         html.Div(
-                                    [
-                                        daq.Joystick(
-                                            id="joystick",
-                                            angle=0,
-                                            force=0
-                                        )
-                                ], className="four columns"
-                                ),
+                                            [
+                                                daq.Joystick(
+                                                    id="joystick",
+                                                    angle=0,
+                                                    force=0
+                                                )
+                                            ], className="four columns"
+                                        ),
 
-                                html.Div(
-                                    [
-                                        daq.Knob(
-                                            id="ultrasonic-angle",
-                                            label=" ",
-                                            value=0,
-                                            size=60,
-                                            color="#FF5E5E",
-                                            min=0,
-                                            max=180,
-                                            scale={"custom":{"0":0, "90":90, "180":180}}
+                                        html.Div(
+                                            [
+                                                daq.Knob(
+                                                    id="ultrasonic-angle",
+                                                    label=" ",
+                                                    size=60,
+                                                    value=90,
+                                                    color="#FF5E5E",
+                                                    min=0,
+                                                    max=180,
+                                                    scale={"custom": {
+                                                        "0": 0, "90": 90, "180": 180}}
+                                                )
+                                            ], className='four columns'
                                         )
-                                ], className='four columns'
-                                )
                                     ], className='row', style={"display": "flex",
-                                           "justify-content": "center",
-                                           "align-items": "center",
-                                           "marginBottom":"-6%"}
+                                                               "justify-content": "center",
+                                                               "align-items": "center",
+                                                               "marginBottom": "-4%"}
                                 ),
                                 html.H6(
                                     "Gripper",
@@ -176,7 +173,7 @@ app.layout = html.Div(
                                     [
                                         daq.StopButton(
                                             id="start-grip",
-                                            buttonText="Start",
+                                            buttonText="Open",
                                             style={"display": "flex",
                                                        "justify-content": "center",
                                                        "align-items": "center"},
@@ -208,257 +205,241 @@ app.layout = html.Div(
                                     style={"display": "flex",
                                            "justify-content": "center",
                                            "align-items": "center",
-                                           "marginBottom": "3%",
+                                           "marginBottom": "5.5%",
                                            "paddingBottom": "1%"}
                                 ),
 
                             ], style={"border": "1px solid #2a3f5f", "border-radius": "5px",  "marginBottom": "3%"}
                         ),
                         html.Div(
-                            [   html.H5("Ultrasonic Data",
-                                        id="data-title",
-                                        style={"textAlign": "center"}
-                                        ),
-                                        daq.ToggleSwitch(
-                                    id="capture-sweep",
-                                    label=["Capture", "Sweep"],
-                                    value=True,
-                                    color="#FF5E5E",
-                                    size=32,
-                                    style={"display": "flex",
-                                                       "justify-content": "center",
-                                                       "align-items": "center"}
-                                    ),
+                            [
+                                html.H5("Ultrasonic Data",
+                                     id="data-title",
+                                     style={"textAlign": "center"}
+                                     ),
+                                daq.ToggleSwitch(
+                                id="capture-sweep",
+                                label=["Capture", "Sweep"],
+                                value=True,
+                                color="#FF5E5E",
+                                size=32,
+                                style={"display": "flex",
+                                       "justify-content": "center",
+                                       "align-items": "center"}
+                            ),
                                 html.Div(
                                     id="capture",
-                            children=[
-                                
-                                html.Div(
-                                    [
-                                        daq.LEDDisplay(
-                                            id="ultra-sonic-data",
-                                            label=" ",
-                                            value="0.00",
-                                            size=35,
-                                        ),
-                                        html.Div([
-                                            html.H5(
-                                                "cm",
-                                                id="unit-holder",
-                                                style={"border-radius": "3px",
-                                                       "border-width": "5px",
-                                                       "border": "1px solid rgb(216, 216, 216)",
-                                                       "font-size": "46px",
-                                                       "color": "#2a3f5f",
-                                                       "display": "flex",
-                                                       "justify-content": "center",
-                                                       "align-items": "center",
-                                                       "width": "110%",
-                                                       "marginRight": "2%"
-                                                       }
-                                            ),
-                                        ], style={"paddingTop": "2.5%",
-                                                  "paddingLeft": "1%",
-                                                  "width": "22%"}
-                                        )
-                                    ], className="row",
-                                    style={"display": "flex",
-                                           "justify-content": "center",
-                                           "align-items": "center",
-                                           "paddingRight": "3%",
-                                           "marginTop":"9%"
-                                           }
-                                ),
-                                html.Div(
-                                    [
-                                        daq.Indicator(
-                                    id="ultrasonic-light",
-                                    color="#EF553B",
-                                    label="Detected",
-                                    value=True,
-                                    style={"marginTop": "5%",
-                                           "paddingBottom": "8%",
-                                           "width":"31%"}
-                                ),
-                                daq.StopButton(
-                                    id="ultrasonic-capture",
-                                    buttonText="Capture",
-                                    n_clicks=0
-                                )
-                                    ], className="row", style={"display": "flex",
-                                                               "justify-content": "center",
-                                                               "align-items": "center"}
-                                ),
-                                html.Div(
-                                    [
-                                
-                                    ], style={"display": "flex",
-                                              "justify-content": "center",
-                                              "align-items": "center"}
-                                )
-                                
-                            ], style={"position":"absolute", "width":"100%", "height":"100%"}
-                        ),
-                        html.Div(
-                            id="sweep",
-                            style={"paddingTop":"1%", "position":"absolute", "width":"100%", "height":"100%"},
-                            children=[
-                                html.Div(
-                                    [   
-                                        html.Div(
+                                children=[
+                                    html.Div(
                                         [
-                                        html.H6(
-                                            "Sweep Data (CM)",
-                                            style={"textAlign":"center"}
+                                            daq.LEDDisplay(
+                                                id="ultra-sonic-data",
+                                                label=" ",
+                                                value="0.00",
+                                                size=35,
                                             ),
-                                            dcc.Graph(
-                                            id="sweep-graph",
-                                            style={
-                                                "width": "310px", "height": "210px"},
-                                            config={
-                                                'displayModeBar': False
-                                            },
-                                            figure={
-                                                'data': [
-                                                    go.Scatterpolar(
-                                                        theta=[""],
-                                                        r=[""],
-                                                        mode='markers',
-                                                        marker={
-                                                            'size': 6}
-                                                    )
-                                                ],
-                                                'layout': go.Layout(
-                                                    polar={
-                                                        "sector": [0, 180],
-                                                        "radialaxis":{"visible": False}
-                                                    },
-                                                    margin={'l': 40, 'b': 50,
-                                                            't': 40, 'r': 40},
-                                                )
-                                            }
-                                        )
-                                        ]
+                                            html.Div([
+                                                html.H5(
+                                                    "cm",
+                                                    id="unit-holder",
+                                                    style={"border-radius": "3px",
+                                                           "border-width": "5px",
+                                                           "border": "1px solid rgb(216, 216, 216)",
+                                                           "font-size": "46px",
+                                                           "color": "#2a3f5f",
+                                                           "display": "flex",
+                                                           "justify-content": "center",
+                                                           "align-items": "center",
+                                                           "width": "110%",
+                                                           "marginRight": "2%"
+                                                           }
+                                                ),
+                                            ], style={"paddingTop": "2.5%",
+                                                      "paddingLeft": "1%",
+                                                      "width": "22%"}
+                                            )
+                                        ], className="row",
+                                        style={"display": "flex",
+                                               "justify-content": "center",
+                                               "align-items": "center",
+                                               "paddingRight": "3%",
+                                               "marginTop": "9%"
+                                               }
                                     ),
-                                        daq.StopButton(
-                                            id="ultrasonic-sweep",
-                                            buttonText="Sweep",
-                                            n_clicks=0,
-                                            size=55,
-                                            style={"position":"absolute", "top":"16px","left":"265px"}
+                                    html.Div(
+                                        [
+                                            daq.Indicator(
+                                                id="ultrasonic-light",
+                                                color="#EF553B",
+                                                label="Detected",
+                                                value=True,
+                                                style={"marginTop": "5%",
+                                                       "paddingBottom": "8%",
+                                                       "width": "31%"}
+                                            ),
+                                            daq.StopButton(
+                                                id="ultrasonic-capture",
+                                                buttonText="Capture",
+                                                n_clicks=0
+                                            )
+                                        ], className="row", style={"display": "flex",
+                                                                   "justify-content": "center",
+                                                                   "align-items": "center"}
+                                    ),
+                                    html.Div(
+                                        [
 
-                                        )
-                                    ], style={"display": "flex",
-                                              "justify-content": "center",
-                                              "align-items": "center"}
-                                )
-                                
-                            ]
+                                        ], style={"display": "flex",
+                                                  "justify-content": "center",
+                                                  "align-items": "center"}
+                                    )
+
+                                ], style={"position": "absolute", "width": "100%", "height": "100%"}
+                            ),
+                                html.Div(
+                                id="sweep",
+                                style={"paddingTop": "1%", "position": "absolute",
+                                       "width": "100%", "height": "100%"},
+                                children=[
+                                    html.Div(
+                                        [
+                                            html.Div(
+                                                [
+                                                    html.H6(
+                                                        "Sweep Data (CM)",
+                                                        style={
+                                                            "textAlign": "center"}
+                                                    ),
+                                                    dcc.Graph(
+                                                        id="sweep-graph",
+                                                        style={
+                                                            "width": "310px", "height": "210px"},
+                                                        config={
+                                                            'displayModeBar': False
+                                                        },
+                                                        figure={
+                                                            'data': [
+                                                                go.Scatterpolar(
+                                                                    theta=[""],
+                                                                    r=[""],
+                                                                    mode='markers',
+                                                                    marker={
+                                                                        'size': 6}
+                                                                )
+                                                            ],
+                                                            'layout': go.Layout(
+                                                                polar={
+                                                                    "sector": [0, 180],
+                                                                    "radialaxis":{"visible": False}
+                                                                },
+                                                                margin={'l': 40, 'b': 50,
+                                                                        't': 40, 'r': 40},
+                                                            )
+                                                        }
+                                                    )
+                                                ]
+                                            ),
+                                            daq.StopButton(
+                                                id="ultrasonic-sweep",
+                                                buttonText="Sweep",
+                                                n_clicks=0,
+                                                size=55,
+                                                style={"position": "absolute",
+                                                       "top": "16px", "left": "265px"}
+
+                                            )
+                                        ], style={"display": "flex",
+                                                  "justify-content": "center",
+                                                  "align-items": "center"}
+                                    )
+
+                                ]
+                            )
+
+                            ], style={"paddingTop": "3%", "width": "100%", "border": "1px solid #2a3f5f", "border-radius": "5px", "position": "relative", "paddingBottom": "80%"}
                         )
 
-                            ], style={"paddingTop": "3%", "width": "100%", "border": "1px solid #2a3f5f", "border-radius": "5px", "position":"relative", "paddingBottom":"80%"}
-                        )
-                        
                     ], className="four columns"
                 ),
                 html.Div(
                     [
                         html.Div(
-                         id="sparki-box",
-                         children=[
-                            html.H5(
-                                " ",
-                                id="sparki-icon",
-                                style={"font-size": "50px",
-                                       "color": "",
-                                       "paddingLeft": "10px",
-                                       "paddingTop": "10px"},
-                                className="icon-sparki"
-                            ),
-
-                        ], style={"border-width": "5px",
-                                  "border": "1px solid #2a3f5f",
-                                  "height": "350px",
-                                  "width": "400px",
-                                  "position":"absolute"}
-                    ),
-                    html.Div(
-                         id="sparki-arrow",
-                         children=[
+                            id="sparki-arrow",
+                            children=[
                                 html.H5(
-                                " ",
-                                id="sparki-up",
-                                style={"font-size": "75px",
-                                       "color": "#EF553B",
-                                       "display": "flex",
-                                       "justify-content": "center",
-                                       "align-items": "center",
-                                       "marginTop": "4%"
-                                       },
-                                className="icon-up"
+                                    " ",
+                                    id="sparki-up",
+                                    style={"font-size": "75px",
+                                           "color": "#EF553B",
+                                           "display": "flex",
+                                           "justify-content": "center",
+                                           "align-items": "center",
+                                           "marginTop": "4%"
+                                           },
+                                    className="icon-up"
                                 ),
                                 html.Div(
                                     [
                                         html.H5(
-                                " ",
-                                id="sparki-left",
-                                style={"font-size": "75px",
-                                       "color": "#EF553B"
-                                       },
-                                className="icon-left four columns"
-                                    ),
-                                    html.H5(
-                                " ",
-                                id="sparki-icon-arrow",
-                                style={"font-size": "80px",
-                                       "color": ""
-                                       },
-                                className="icon-sparki four columns"
-                                    ),
-                                html.H5(
-                                " ",
-                                id="sparki-right",
-                                style={"font-size": "75px",
-                                       "color": "#EF553B"
-                                       },
+                                            " ",
+                                            id="sparki-left",
+                                            style={"font-size": "75px",
+                                                   "color": "#EF553B"
+                                                   },
+                                            className="icon-left four columns"
+                                        ),
+                                        html.H5(
+                                            " ",
+                                            id="sparki-icon-arrow",
+                                            style={"font-size": "80px",
+                                                   "color": ""
+                                                   },
+                                            className="icon-sparki four columns"
+                                        ),
+                                        html.H5(
+                                            " ",
+                                            id="sparki-right",
+                                            style={"font-size": "75px",
+                                                   "color": "#EF553B"
+                                                   },
                                             className="icon-right four columns"
-                                    )
+                                        )
                                     ], className="row", style={"display": "flex",
                                                                "justify-content": "center",
                                                                "align-items": "center",
-                                                               "marginTop":"7%",
-                                                               "marginLeft":"9%"}
+                                                               "marginTop": "7%",
+                                                               "marginLeft": "9%"}
                                 ),
-                            html.H5(
-                                " ",
-                                id="sparki-down",
-                                style={"font-size": "75px",
-                                       "color": "#EF553B",
-                                       "display": "flex",
-                                       "justify-content": "center",
-                                       "align-items": "center"
-                                       },
-                                className="icon-down"
-                            )
-                        ], style={"height": "350px",
-                                  "width": "400px",
-                                  "position":"absolute",
-                                  "border": "1px solid #2a3f5f",
-                                  "border-radius":"5px"}
-                    ),  
-                    html.Div(
-                        [
-                            dcc.Textarea(
-                                id="object-detection",
-                                placeholder="",
-                                value=' ',
-                                style={'width': '93%', "height": "291px",
-                                       "border": "1px solid #2a3f5f", "border-radius": "5px", "position": "absolute", "top": "363px"}
-                            )
-                        ]
-                    )
+                                html.H5(
+                                    " ",
+                                    id="sparki-down",
+                                    style={"font-size": "75px",
+                                           "color": "#EF553B",
+                                           "display": "flex",
+                                           "justify-content": "center",
+                                           "align-items": "center"
+                                           },
+                                    className="icon-down"
+                                )
+                            ], style={"height": "350px",
+                                      "width": "400px",
+                                      "position": "absolute",
+                                      "border": "1px solid #2a3f5f",
+                                      "border-radius": "5px"}
+                        ),
+                        html.Div(
+                            [
+                                dcc.Textarea(
+                                    id="object-detection",
+                                    placeholder="",
+                                    value=' ',
+                                    style={'width': '93%', "height": "291px",
+                                           "border": "1px solid #2a3f5f", "border-radius": "5px", "position": "absolute", "top": "363px"}
+                                )
+                            ]
+                        )
 
-                    ], className="five columns", style={"position":"relative"}
+                    ], className="five columns", style={"position": "relative"}
                 )
             ], className='row', style={"marginTop": "4%"}
         ),
@@ -484,7 +465,8 @@ app.layout = html.Div(
                 html.Div(id='indv-ultra'),
                 html.Div(id="capture-hold"),
                 html.Div(id="sweep-hold"),
-                html.Div(id="head-hold")
+                html.Div(id="head-hold"),
+                html.Div(id="ultra-stop-hold")
 
             ], style={"visibility": "hidden"}
         )
@@ -495,36 +477,27 @@ app.layout = html.Div(
               'height': "825",
               'boxShadow': '0px 0px 5px 5px rgba(204,204,204,0.4)',
               "position": "absolute",
-    "top":"0",
-    "bottom":"0",
-    "left":"0",
-    "right":"0"}
+              "top": "0",
+              "bottom": "0",
+              "left": "0",
+              "right": "0"}
 )
 
 
-# app.layout = root_layout
-# Color Picker
+# Sweep Capture Hold
 @app.callback(
     Output("sweep-capture-hold", "children"),
     [Input("capture-sweep", "value")]
 )
 def sweep_capture(value):
     if value:
-        return "1" #Sweep
+        return "1"  # Sweep
     else:
-        return "2" #Capture
-
-@app.callback(
-    Output("free-box-hold", "children"),
-    [Input("free-box", "value")]
-)
-def free_box(value):
-    if value:
-        return "2" #Free
-    else:
-        return "1"  #Box
+        return "2"  # Capture
 
 # Sweep and Capture
+
+
 @app.callback(
     Output("capture", "style"),
     [Input("capture-sweep", "value")],
@@ -532,12 +505,13 @@ def free_box(value):
 )
 def capture_components(value, style):
     if value:
-        style["visibility"]="hidden"
-        style["zIndex"]="-10"
+        style["visibility"] = "hidden"
+        style["zIndex"] = "-10"
     else:
-        style["visibility"]="visible"
-        style["zIndex"]="20"
+        style["visibility"] = "visible"
+        style["zIndex"] = "20"
     return style
+
 
 @app.callback(
     Output("sweep", "style"),
@@ -546,39 +520,16 @@ def capture_components(value, style):
 )
 def sweep_components(value, style):
     if value:
-        style["visibility"]="visible"
-        style["zIndex"]="20"
+        style["visibility"] = "visible"
+        style["zIndex"] = "20"
     else:
-        style["visibility"]="hidden"
-        style["zIndex"]="-10"
-    return style
-
-# Sparki-Box and Arrow
-@app.callback(
-    Output("sparki-box", "style"),
-    [Input("free-box", "value")],
-    [State("sparki-box", "style")]
-)
-def sparki_box(value, style):
-    if value:
-        style["visibility"]="hidden"
-    else:
-        style["visibility"]="visible"
-    return style
-
-@app.callback(
-    Output("sparki-arrow", "style"),
-    [Input("free-box", "value")],
-    [State("sparki-arrow", "style")]
-)
-def sparki_arrow(value, style):
-    if value:
-        style["visibility"]="visible"
-    else:
-        style["visibility"]="hidden"
+        style["visibility"] = "hidden"
+        style["zIndex"] = "-10"
     return style
 
 # Banner Color
+
+
 @app.callback(
     Output("container", "style"),
     [Input("led-control", "value")]
@@ -589,6 +540,7 @@ def color_sparki(RGB_color):
     b = RGB_color['rgb']['b']
     hex_color = rgb_convert_hex(r, g, b)
     return {"background-color": hex_color}
+
 
 @app.callback(
     Output("sparki-icon-arrow", "style"),
@@ -610,7 +562,6 @@ def color_sparki(RGB_color, style):
     [Input("stop-beep", "n_clicks")]
 )
 def case_beep(beep_case):
-    print(beep_case)
     if beep_case < 1:
         return 0
     return time.time()
@@ -639,15 +590,17 @@ def grip_close(grip):
 def grip_close(grip):
     return time.time()
 
+
 @app.callback(
     Output("stop-move", "children"),
-    [Input("joystick", "force")],
-    [State("joystick", "angle")]
+    [Input("joystick", "force")]
 )
-def move_right(move, angle):
-    if move == 0:
+def move_right(move):
+    commandOnce = False
+    if move < 0.5:
         return time.time()
     return 0.0
+
 
 @app.callback(
     Output("up-move", "children"),
@@ -658,6 +611,7 @@ def move_up(move):
             return time.time()
     return 0.0
 
+
 @app.callback(
     Output("down-move", "children"),
     [Input("joystick", "angle")]
@@ -667,6 +621,7 @@ def move_down(move):
             return time.time()
     return 0.0
 
+
 @app.callback(
     Output("left-move", "children"),
     [Input("joystick", "angle")]
@@ -675,6 +630,7 @@ def move_left(move):
     if move > 135 and move < 225:
             return time.time()
     return 0.0
+
 
 @app.callback(
     Output("right-move", "children"),
@@ -686,6 +642,8 @@ def move_right(move):
     return 0.0
 
 # Case Select
+
+
 @app.callback(
     Output("motor-hold", "children"),
     [Input("up-move", "children"),
@@ -715,6 +673,7 @@ def case_gripper(grip_case, close_case, stop_case):
 def case_LED(color_case):
     return time.time()
 
+
 @app.callback(
     Output("ultrasonic-hold", "children"),
     [Input("ultrasonic-capture", "n_clicks"),
@@ -722,6 +681,7 @@ def case_LED(color_case):
 )
 def ultrasonic_case(capture, sweep):
     return time.time()
+
 
 @app.callback(
     Output("indv-ultra", "children"),
@@ -731,6 +691,8 @@ def ultrasonic_case(angle):
     return time.time()
 
 # Head Hold
+
+
 @app.callback(
     Output("head-hold", "children"),
     [Input("ultrasonic-angle", "value")]
@@ -740,93 +702,26 @@ def ultrasonic_case(value):
     value = str(value)
     return value
 
+
 @app.callback(
     Output("case-hold", "children"),
     [Input("color-hold", "children"),
      Input("grip-hold", "children"),
      Input("beep-hold", "children"),
      Input("motor-hold", "children"),
-     Input("ultrasonic-hold", "children")]
+     Input("ultrasonic-hold", "children"),
+     Input("indv-ultra", "children")]
 )
-def case_master(color_case, grip_case, beep_case, motor_case, ultra_case):
+def case_master(color_case, grip_case, beep_case, motor_case, ultra_case, head_case):
     master_case = {"1": motor_case, "2": grip_case,
                    "3": color_case, "4": beep_case,
-                   "5":ultra_case}
+                   "5": ultra_case, "6": head_case}
     recent_case = max(master_case, key=master_case.get)
     return recent_case
 
-# Sweep Ultra
-@app.callback(
-    Output("sweep-hold", "children"),
-    [Input("ultrasonic-sweep", "n_clicks")]
-)
-def ultrasonic_sweep(sweep):    
-    df = pd.DataFrame(np.random.randint(-1,150,size=(20, 1)), columns=list('D'))
-    return df.to_json(date_format='iso', orient='split')
-        
-            
-# Sweep Graph
-@app.callback(
-    Output("sweep-graph", "figure"),
-    [Input("sweep-hold", "children")]
-)
-def ultrasonic_sweep(jsonified_cleaned_data):
-    dff = pd.read_json(jsonified_cleaned_data, orient='split')
-    return {
-        'data': [
-            go.Scatterpolar(
-                theta=[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180],
-                r=dff["D"],
-                mode='markers',
-                marker={'size': 6}
-            )
-        ],
-        'layout': go.Layout(
-            polar={
-                "sector": [0, 180],
-                "radialaxis": {"visible": False}
-            },
-            margin={'l': 40, 'b': 50, 't': 40, 'r': 40},
-        )
-    } 
-
-# Capture Ultra
-@app.callback(
-    Output("capture-hold", "children"),
-    [Input("ultrasonic-capture", "n_clicks")]
-)
-def ultrasonic_response(clicks):
-    response = random.uniform(-1, 150)
-    response = int(response)
-    return response
-
-# Ultrasonic Response
-@app.callback(
-    Output("ultra-sonic-data", "value"),
-    [Input("capture-hold", "children")]
-)
-def ultrasonic_display(response):
-    if response == -1:
-        return "999"
-    elif response >= 100:
-        return response
-    response = float(response)
-    response = "%.2f" % response
-    response = (f"{response:{4}.{4}}")
-    response = str(response)
-    return response
-
-# Ultrasonic Response
-@app.callback(
-    Output("ultrasonic-light", "color"),
-    [Input("capture-hold", "children")]
-)
-def ultrasonic_display(response):
-    if response == "-1":
-        return "#EF553B"
-    return "#00cc96"
-
 # Command String
+
+
 @app.callback(
     Output("command-string", "children"),
     [Input("up-move", "children"),
@@ -845,7 +740,7 @@ def ultrasonic_display(response):
 )
 def command_string(move_up, move_left, move_down, move_right, move_stop, grip_open, grip_close, grip_stop, beep_hold, color_hold, ultra_hold, ultra_ind):
     master_command = {"UP": move_up, "LEFT": move_left, "RIGHT": move_right, "DOWN": move_down, "STOPM": move_stop,
-                      "OPEN": grip_open, "CLOSE": grip_close, "STOP": grip_stop, "BEEP": beep_hold, "LED": color_hold, "ULTRA": ultra_hold, "ULTRAF": ultra_ind }
+                      "OPEN": grip_open, "CLOSE": grip_close, "STOP": grip_stop, "BEEP": beep_hold, "LED": color_hold, "ULTRA": ultra_hold, "ULTRAF": ultra_ind}
     recent_command = max(master_command, key=master_command.get)
     return recent_command
 
@@ -858,19 +753,20 @@ def command_string(move_up, move_left, move_down, move_right, move_stop, grip_op
      Input("head-hold", "children")],
     [State("knob-pitch", "value"),
      State("led-control", "value"),
-     State("sweep-capture-hold", "children"),
-     State("free-box-hold", "children")]
+     State("sweep-capture-hold", "children")]
 )
-def central_command(command, case_master, head, beep_freq, RGB_color, ultra, box):
+def central_command(command, case_master, head, beep_freq, RGB_color, ultra):
     R = RGB_color['rgb']['r']
     G = RGB_color['rgb']['g']
     B = RGB_color['rgb']['b']
 
     beep_freq = int(beep_freq)
 
-    command = "<{},{},{},{},{},{},{},{},{}>".format(
-        command, case_master, beep_freq, R, G, B, box, ultra, head)
+    command = "<{}, {}, {}, {}, {}, {}, {}, {}>".format(
+        command, case_master, beep_freq, R, G, B, ultra, head)
     send = command.encode("ASCII")
+    ser.flush()
+    ser.write(send)
     readme = ("------------------------READ ME!----------------------\n" +
               "This app was made to control Sparki, an arduino powered." +
               "robot. Sparki is controlled wirelessly via the bluetooth" +
@@ -879,28 +775,125 @@ def central_command(command, case_master, head, beep_freq, RGB_color, ultra, box
               "-------------------COMMAND STRING----------------\n\n")
     command_string = ("Command: " + command)
     modes = ("\n\n------------------------MODES!!!----------------------\n"
-             "The motion of Sparki has two modes, where free mode allow" +
-             "s sparki to move anywhere. Box mode is designed to show " +
-             "Sparki's movements, if a tracking system were installed." +
-             "In box mode, Sparki is coded, to move in 90 degree incre" +
-             "ments and 5 cm forwards and backwards. Box mode is intended" +
-             "for the mock application, and has been left for the user, " +
-             "to modify if they want Sparki to respond with the the GUI." +
-             "The sweep mode, sweeps a 180 degree area in 10 degree " +
-             "increments, and graphs the distance at each angle. Capture mode," +
-             " records a single data point and displays the distance of that object.")
+             "The sweep mode, sweeps a 180 in 10 degree increments, and" +
+             " graphs the distance at each angle. Capture mode, records a" +
+             " single data point and displays the distance of that object.")
 
     return readme + command_string + modes
+
+# Sweep Ultra
+
+
+@app.callback(
+    Output("sweep-hold", "children"),
+    [Input("object-detection", "value")],
+    [State("sweep-capture-hold", "children"),
+     State("command-string", "children"),
+     State("ultrasonic-capture", "n_clicks"),
+     State("ultrasonic-sweep", "n_clicks")]
+)
+def ultrasonic_sweep(useless, sweep_hold, command, capture_button, sweep_button):
+        if command == "ULTRA" and sweep_hold == "1" and (capture_button >= 1 or sweep_button >=1):
+            ser.reset_input_buffer()
+            response = ser.readlines(180)
+            response_string = ",".join(map(str, response))
+            response_string = response_string.replace("b'", "")
+            response_string = response_string.replace("\\r\\n,", "")
+            response_string_angle = response_string.split("c")
+            response_string_distance = response_string.split("a")
+            response_string_angle.sort()
+            response_string_distance.sort()
+            response_string_angle = response_string_angle[1:19]
+            response_string_distance = response_string_distance[1:19]
+
+            df = pd.DataFrame()
+            df['Angles'] = response_string_angle
+            df['Distance'] = response_string_distance
+
+            return df.to_json(date_format='iso', orient='split')
+        return
+
+# Sweep Graph
+@app.callback(
+    Output("sweep-graph", "figure"),
+    [Input("sweep-hold", "children")]
+)
+def ultrasonic_sweep(jsonified_cleaned_data):
+
+    dff = pd.read_json(jsonified_cleaned_data, orient='split')
+
+    return {
+        'data': [
+            go.Scatterpolar(
+                theta=dff["Angles"],
+                r=dff["Distance"],
+                mode='markers',
+                marker={'size': 6}
+            )
+        ],
+        'layout': go.Layout(
+            polar={
+                "sector": [0, 180],
+                "radialaxis": {"visible": False}
+            },
+            margin={'l': 40, 'b': 50, 't': 40, 'r': 40},
+        )
+    }
+
+# Capture Ultra
+
+
+@app.callback(
+    Output("capture-hold", "children"),
+    [Input("object-detection", "value")],
+    [State("sweep-capture-hold", "children"),
+     State("command-string", "children")]
+)
+def ultrasonic_response(useless, sweep_hold, command):
+    if sweep_hold == "2" and command == "ULTRA":
+        ser.reset_input_buffer()
+        response = ser.readline().decode("ASCII")
+        response = response.split("\r\n")[0]
+        return response
+
+# Ultrasonic Response
+
+
+@app.callback(
+    Output("ultra-sonic-data", "value"),
+    [Input("capture-hold", "children")]
+)
+def ultrasonic_display(response):
+    if response == "-1":
+        return "999"
+    elif int(response) >= 100:
+        return int(response)
+    response = float(response)
+    response = "%.2f" % response
+    response = (f"{response:{4}.{4}}")
+    response = str(response)
+    return response
+
+#  Ultrasonic Response
+
+
+@app.callback(
+    Output("ultrasonic-light", "color"),
+    [Input("capture-hold", "children")]
+)
+def ultrasonic_display(response):
+    if response == "-1":
+        return "#EF553B"
+    return "#00cc96"
 
 
 @app.callback(
     Output("sparki-icon", "style"),
     [Input("led-control", "value"),
      Input("command-string", "children")],
-    [State("sparki-icon", "style"),
-    State("free-box-hold", "children")]
+    [State("sparki-icon", "style")]
 )
-def central_command(RGB_color, move, style, box):
+def central_command(RGB_color, move, style):
     if move == "LED":
         r = RGB_color['rgb']['r']
         g = RGB_color['rgb']['g']
@@ -909,82 +902,62 @@ def central_command(RGB_color, move, style, box):
         style["color"] = hex_color
         return style
 
-    x = style["paddingLeft"][:4]
-    x = x.split('p')[0]
-    x = int(x)
-
-    y = style["paddingTop"][:4]
-    y = y.split('p')[0]
-    y = int(y)
-    if box == "1":
-        if move == "UP" and y > 0:
-            y = y - 50
-            style["paddingTop"] = "{}px".format(y) 
-        elif move == "DOWN" and y < 260:
-            y = y + 50
-            style["paddingTop"] = "{}px".format(y) 
-        elif move == "LEFT" and x > 0:
-            x = x - 50
-            style["paddingLeft"] = "{}px".format(x) 
-        elif move == "RIGHT" and x < 280:
-            x = x + 50
-            style["paddingLeft"] = "{}px".format(x) 
-    
-    return style
 
 # Sparki Arrow Colors
+
+
 @app.callback(
     Output("sparki-up", "style"),
     [Input("command-string", "children")],
-    [State("sparki-up", "style"),
-     State("free-box-hold", "children")]
+    [State("sparki-up", "style")]
 )
-def sparki_arrow_up(command, style, box):
-    if command == "UP" and box == "2":
-        style["color"]="#00cc96"
+def sparki_arrow_up(command, style):
+    if command == "UP":
+        style["color"] = "#00cc96"
     else:
-        style["color"]="#EF553B"
+        style["color"] = "#EF553B"
     return style
+
 
 @app.callback(
     Output("sparki-down", "style"),
     [Input("command-string", "children")],
-    [State("sparki-down", "style"),
-     State("free-box-hold", "children")]
+    [State("sparki-down", "style")]
 )
-def sparki_arrow_down(command, style, box):
-    if command == "DOWN" and box == "2":
-        style["color"]="#00cc96"
+def sparki_arrow_down(command, style):
+    if command == "DOWN":
+        style["color"] = "#00cc96"
     else:
-        style["color"]="#EF553B"
+        style["color"] = "#EF553B"
     return style
+
 
 @app.callback(
     Output("sparki-right", "style"),
     [Input("command-string", "children")],
-    [State("sparki-right", "style"),
-     State("free-box-hold", "children")]
+    [State("sparki-right", "style")]
 )
-def sparki_arrow_right(command, style, box):
-    if command == "RIGHT" and box == "2":
-        style["color"]="#00cc96"
+def sparki_arrow_right(command, style):
+    if command == "RIGHT":
+        style["color"] = "#00cc96"
     else:
-        style["color"]="#EF553B"
+        style["color"] = "#EF553B"
     return style
+
 
 @app.callback(
     Output("sparki-left", "style"),
     [Input("command-string", "children")],
-    [State("sparki-left", "style"),
-     State("free-box-hold", "children")]
+    [State("sparki-left", "style")]
 )
-def sparki_arrow_left(command, style, box):
-    if command == "LEFT" and box == "2":
-        style["color"]="#00cc96"
+def sparki_arrow_left(command, style):
+    if command == "LEFT":
+        style["color"] = "#00cc96"
     else:
-        style["color"]="#EF553B"
+        style["color"] = "#EF553B"
     return style
-    
+
+
 if __name__ == '__main__':
-   
-    app.run_server(debug=True)
+
+    app.run_server(debug=False)
