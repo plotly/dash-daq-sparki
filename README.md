@@ -53,7 +53,7 @@ If you have issues uploading to Sparki perform a [manual upload](http://arcbotic
 
 When the file is uploaded, plug the HC-05 [Bluetooth module](http://arcbotics.com/products/sparki/parts/bluetooth-module/) into Sparki like so:
 
-<img src="screenshots/bluetooth.jpg" width="48">
+<img src="screenshots/bluetooth.jpg" width="250">
 
 Now, you can set up the Bluetooth connection bewtween your computer and Sparki, by following the instructions here for [Windows](http://arcbotics.com/products/bluetooth-2-1-module/connecting-your-bluetooth-2-1-module-with-windows-7/), and here for Mac(http://arcbotics.com/products/bluetooth-2-1-module/connecting-your-bluetooth-2-1-module-with-mac-os-x/).
 
