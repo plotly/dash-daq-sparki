@@ -32,29 +32,73 @@ pip install -r requirements.txt
 and all of the required `pip` packages, as well as the package, will be installed, and the app will be able to run.
  
 ## How to use the app
-Here, you should put the command needed to run your app, and then the steps that the user should take to use it. You should include screenshots of the app running in your own browser to make it easier to follow along. 
+There are two versions of this application. A mock version for the user to play with, without any instruments connected, and a local version, that can be connected to a device.
 
-Then, show a step-by-step guide of how your app works, and what each control does.
+### Local Application
+If you would like to run the __**local version**__, first ensure that the following file is uploaded to Sparki using Sparkiduino.
 
-If possible, include screenshots of something in the app failing, and, if any, the steps that the user can take to correct the error.
+Open the provided file with Sparkiduino,:
 
-There are two versions of this application. A mock version for the user to play with without any instruments connected, and a local version, that can be connected to a device.
+```
+sparki_arduino.ino
+```
+and ensure the __**board ArcBotics Sparki**__ and correct port are selected:
 
-If you would like to run the local version, please connect the device to the USB port on your computer, and run in the command line:
+
+next upload the file to Sparki:
+
+
+If you have issues uploading to Sparki perform a [manual upload](http://arcbotics.com/lessons/manual-upload/).
+
+When the file is uploaded, plug the HC-05 [Bluetooth module](http://arcbotics.com/products/sparki/parts/bluetooth-module/) into Sparki like so:
+
+
+Now, you can set up the Bluetooth connection bewtween your computer and Sparki, by following the instructions here for [Windows](http://arcbotics.com/products/bluetooth-2-1-module/connecting-your-bluetooth-2-1-module-with-windows-7/), and here for Mac(http://arcbotics.com/products/bluetooth-2-1-module/connecting-your-bluetooth-2-1-module-with-mac-os-x/).
+
+Once you have finished setting up the connection bewteen Sparki and your PC, take the __**serial port path or COM PORT**__ 
+and insert it like so in:
+
 ``` 
 python app.py
 ```
 
+Run the file in the command line like so:
+
+![changefail](screenshots/pythonapp.jpg)
+
+and you should see this:
+
+![changefail](screenshots/runapp.JPG)
+
+Open the web address given to you in your browser and the application will be ready for use:
+
+![changefail](screenshots/openport.JPG)
+
 If the app is run, but the device is not connected you will see something like this:
 
+![changefail](screenshots/notplugedin.JPG)
 
+Sometimes the connection drops with Sparki, if you have issues with connection try the following:
+1. Turning the Bluetooth on and off on the PC
+2. Pressing the reset button on Sparki
+3. Running __**app.py**__
 
-If you would like to run the mock version, run in the command line:
+### Mock Application
+If you would like to run the __**mock version**__, run in the command line:
 
 ```
-python app_mock.py demo
+python app_mock.py 
 ```
-A step by step guide with photos is provided below:
+
+![changefail](screenshots/pythonapp_mock.jpg)
+
+and you should see this:
+
+![changefail](screenshots/runmock.JPG)
+
+Open the web address given to you in your browser and the application will be ready for use:
+
+![changefail](screenshots/openport.JPG)
 
 ### Controls
 * Color Picker: Changes colors of the RGB LED, and the Sparki icon.
