@@ -43,7 +43,7 @@ Open the provided file with Sparkiduino,:
 sparki_arduino.ino
 ```
 and ensure the __**board ArcBotics Sparki**__ and correct port are selected:
-![changefail](screenshots/port_board.jpg)
+![changefail](screenshots/port_board.png)
 
 next upload the file to Sparki:
 ![changefail](screenshots/upload.png)
