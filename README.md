@@ -5,7 +5,7 @@ An application that allows the user to wirelessly control an arduino powered rob
 
 
 ### Sparki
-Sparki is a pre-built robot, consisting of: an ultrasonic sensor, piezometer, stepper motor, servos, an RGB LED, and a bluetooth module. This robot is built upon a Arduino microcontroller, and is programmed with Sparkiduino, an Ardunio based IDE.
+Sparki is a pre-built robot, consisting of: an ultrasonic sensor, piezometer, stepper motor, servos, an RGB LED, and a bluetooth module. This robot is built upon a Arduino microcontroller, and is programmed with Sparkiduino, an Arduino based IDE.
 
 
 ### dash-daq
@@ -13,23 +13,20 @@ Sparki is a pre-built robot, consisting of: an ultrasonic sensor, piezometer, st
 
 
 ## Requirements
-It is advisable	to create a separate conda environment running Python 3 for the app and install all of the required packages there. To do so, run (any version of Python 3 will work):
+It is advisable	to create a separate virtual environment running Python 3 for the app and install all of the required packages there. To do so, run (any version of Python 3 will work):
 
 ```
-conda create -n	[your environment name] python=3.6.4
+python3 -m virtualenv [your environment name]
 ```
 ```
 source activate [your environment name]
 ```
 
-To install all of the required packages to this conda environment, simply run:
+To install all of the required packages to this environment, simply run:
 
 ```
 pip install -r requirements.txt
-
 ```
-
-and all of the required `pip` packages, as well as the package, will be installed, and the app will be able to run.
  
 ## How to use the app
 There are two versions of this application. A mock version for the user to play with, without any instruments connected, and a local version, that can be connected to a device.
