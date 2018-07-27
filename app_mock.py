@@ -752,7 +752,6 @@ def color_sparki(RGB_color, style):
     [Input("stop-beep", "n_clicks")]
 )
 def case_beep(beep_case):
-    print(beep_case)
     if beep_case < 1:
         return 0
     return time.time()

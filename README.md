@@ -117,3 +117,5 @@ Open the web address given to you in your browser and the application will be re
 ## Resources
 PySerial was used for serial communication, over bluetooth. The API for PySerial can be found [here](http://pyserial.readthedocs.io/en/latest/pyserial_api.html). For programming Sparki, use the Sparkiduino IDE, which also comes with the necessary drivers; you can find the link [here](http://arcbotics.com/lessons/sparkiduino-windows-install-guide/).
 
+## Icon Credit
+[Robot Icon](https://thenounproject.com/search/?q=1275888&i=1275888): Credit goes to Dinosoft Labs, PK for this icon.
