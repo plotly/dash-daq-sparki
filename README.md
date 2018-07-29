@@ -1,7 +1,7 @@
 # Dash-Sparki
 
 ## Introduction
-An application that allows the user to wirelessly control an arduino powered robot known as [Sparki](http://arcbotics.com/products/sparki/). [Play with Sparki here](http://dash-daq-sparki.herokuapp.com/) and learn more about this application from our [blog entry](https://www.dashdaq.io/sparki). //Add link to blog post.
+An application that allows the user to wirelessly control an arduino powered robot known as [Sparki](http://arcbotics.com/products/sparki/). [Play with Sparki here](http://dash-daq-sparki.herokuapp.com/) and learn more about this application from our [blog entry](https://www.dashdaq.io/control-a-wireless-arduino-robot-in-python). 
 
 
 ### Sparki
@@ -118,4 +118,4 @@ Open the web address given to you in your browser and the application will be re
 PySerial was used for serial communication, over bluetooth. The API for PySerial can be found [here](http://pyserial.readthedocs.io/en/latest/pyserial_api.html). For programming Sparki, use the Sparkiduino IDE, which also comes with the necessary drivers; you can find the link [here](http://arcbotics.com/lessons/sparkiduino-windows-install-guide/).
 
 ## Icon Credit
-[Robot Icon](https://thenounproject.com/search/?q=1275888&i=1275888): Credit goes to Dinosoft Labs, PK for this icon.
+* [Robot Icon](https://thenounproject.com/search/?q=1275888&i=1275888): Credit goes to Dinosoft Labs, PK for this icon.
