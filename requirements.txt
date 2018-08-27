@@ -1,6 +1,6 @@
 gunicorn==19.8.1
 plotly==3.1.0
-dash==0.21.1
+dash>=0.26.0
 dash-renderer==0.12.1
 dash-html-components==0.10.1
 dash-core-components==0.22.1
