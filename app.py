@@ -27,18 +27,6 @@ def rgb_convert_hex(r, g, b):
 ser = serial.Serial("COM8", 9600, timeout=10)
 ser.flush()
 
-# CSS Imports
-external_css = [
-    "https://codepen.io/chriddyp/pen/bWLwgP.css",
-    "https://cdn.rawgit.com/matthewchan15/dash-css-style-sheets/adf070fa/banner.css",
-    "https://fonts.googleapis.com/css?family=Raleway:400,400i,700,700i",
-    "https://fonts.googleapis.com/css?family=Product+Sans:400,400i,700,700i",
-    "https://rawgit.com/matthewchan15/dash-sparki-icon-sheet/master/css/sparkibot.css",
-]
-
-for css in external_css:
-    app.css.append_css({"external_url": css})
-
 app.layout = html.Div(
     [
         html.Div(
@@ -585,7 +573,7 @@ app.layout = html.Div(
                 html.Div(id="head-hold"),
                 html.Div(id="ultra-stop-hold"),
             ],
-            style={"visibility": "hidden"},
+            style={"display": "none"},
         ),
     ],
     style={
