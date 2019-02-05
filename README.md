@@ -1,7 +1,7 @@
 # Dash-Sparki
 
 ## Introduction
-An application that allows the user to wirelessly control an arduino powered robot known as [Sparki](http://arcbotics.com/products/sparki/). [Play with Sparki here](http://dash-daq-sparki.herokuapp.com/) and learn more about this application from our [blog entry](https://www.dashdaq.io/control-a-wireless-arduino-robot-in-python). 
+An application that allows the user to wirelessly control an arduino powered robot known as [Sparki](http://arcbotics.com/products/sparki/). [Play with Sparki here](https://dash-gallery.plotly.host/dash-daq-sparki) and learn more about this application from our [blog entry](https://www.dashdaq.io/control-a-wireless-arduino-robot-in-python). 
 
 
 ### Sparki
