@@ -15,7 +15,6 @@ import serial
 app = dash.Dash(__name__)
 
 server = app.server
-app.scripts.config.serve_locally = True
 
 def rgb_convert_hex(r, g, b):
     return "#%02x%02x%02x" % (r, g, b)
